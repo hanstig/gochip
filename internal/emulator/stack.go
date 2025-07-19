@@ -16,6 +16,10 @@ type Stack struct {
 	size uint8
 }
 
+func NewStack() Stack {
+	return Stack{}
+}
+
 func (s *Stack) IsEmpty() bool {
 	return s.size == 0
 }
