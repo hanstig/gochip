@@ -99,8 +99,11 @@ func (e *Emulator) decode(opcode word) (func(word), error) {
 	return f, nil
 }
 
+// Clear the display
 func (e *Emulator) op_00E0(opcode word) {
-
+	for i := range len(e.screen) {
+		e.screen[i] = false
+	}
 }
 
 func (e *Emulator) op_00EE(opcode word) {
