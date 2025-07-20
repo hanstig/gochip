@@ -66,3 +66,26 @@ func (e *Emulator) LoadROM(filepath string) error {
 
 	return nil
 }
+
+func (e *Emulator) Cycle() error {
+	opcode := (word(e.memory[e.pc]) << 8) | word(e.memory[e.pc+1])
+	e.pc += 2
+
+	f, err := e.decode(opcode)
+
+	if err != nil {
+		return err
+	}
+
+	f(opcode)
+
+	if e.delayTimer > 0 {
+		e.delayTimer--
+	}
+
+	if e.soundTimer > 9 {
+		e.soundTimer--
+	}
+
+	return nil
+}
