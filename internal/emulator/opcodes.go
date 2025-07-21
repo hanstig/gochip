@@ -89,6 +89,8 @@ func (e *Emulator) decode(opcode word) (func(word), error) {
 			f = e.op_Fx33
 		case 0x55:
 			f = e.op_Fx55
+		case 0x65:
+			f = e.op_Fx65
 		}
 	}
 
@@ -106,134 +108,303 @@ func (e *Emulator) op_00E0(opcode word) {
 	}
 }
 
+// Return from a subroutine
 func (e *Emulator) op_00EE(opcode word) {
-
+	e.sp--
+	e.pc = e.stack[e.sp]
 }
 
+// Jump to nnn
 func (e *Emulator) op_1nnn(opcode word) {
-
+	e.pc = opcode & 0x0fff
 }
 
+// Call subroutine at nnn
 func (e *Emulator) op_2nnn(opcode word) {
-
+	e.stack[e.sp] = e.pc
+	e.sp++
+	e.pc = opcode & 0xfff
 }
 
+// Skip next instruction if Vx == kk
 func (e *Emulator) op_3xkk(opcode word) {
+	Vx := byte((opcode & 0x0f00) >> 8)
+	kk := byte(opcode & 0xff)
 
+	if e.registers[Vx] == kk {
+		e.pc += 2
+	}
 }
 
+// Skip next instruction if Vx != kk
 func (e *Emulator) op_4xkk(opcode word) {
+	Vx := byte((opcode & 0x0f00) >> 8)
+	kk := byte(opcode & 0xff)
 
+	if e.registers[Vx] != kk {
+		e.pc += 2
+	}
 }
 
+// Skip next instruction if Vx == Vy
 func (e *Emulator) op_5xy0(opcode word) {
+	Vx := byte((opcode & 0x0f00) >> 8)
+	Vy := byte((opcode & 0x00f0) >> 4)
 
+	if e.registers[Vx] == e.registers[Vy] {
+		e.pc += 2
+	}
 }
 
+// Set Vx = kk
 func (e *Emulator) op_6xkk(opcode word) {
-
+	Vx := byte((opcode & 0x0f00) >> 8)
+	kk := byte(opcode & 0xff)
+	e.registers[Vx] = kk
 }
 
+// Set Vx = Vx + kk
 func (e *Emulator) op_7xkk(opcode word) {
+	Vx := byte((opcode & 0x0f00) >> 8)
+	kk := byte(opcode & 0xff)
 
+	//NOTE: Correct overflow behaviour?
+	e.registers[Vx] += kk
 }
 
+// Set Vx = Vy
 func (e *Emulator) op_8xy0(opcode word) {
-
+	Vx := byte((opcode & 0x0f00) >> 8)
+	Vy := byte((opcode & 0x00f0) >> 4)
+	e.registers[Vx] = e.registers[Vy]
 }
 
+// Set Vx = Vx | Vy
 func (e *Emulator) op_8xy1(opcode word) {
-
+	Vx := byte((opcode & 0x0f00) >> 8)
+	Vy := byte((opcode & 0x00f0) >> 4)
+	e.registers[Vx] |= e.registers[Vy]
 }
 
+// Set Vx = Vx & Vy
 func (e *Emulator) op_8xy2(opcode word) {
-
+	Vx := byte((opcode & 0x0f00) >> 8)
+	Vy := byte((opcode & 0x00f0) >> 4)
+	e.registers[Vx] &= e.registers[Vy]
 }
 
+// Set Vx = Vx ^ Vy
 func (e *Emulator) op_8xy3(opcode word) {
-
+	Vx := byte((opcode & 0x0f00) >> 8)
+	Vy := byte((opcode & 0x00f0) >> 4)
+	e.registers[Vx] ^= e.registers[Vy]
 }
 
+// Set Vx = Vx 0 Vy, Set VF = carry
 func (e *Emulator) op_8xy4(opcode word) {
+	Vx := byte((opcode & 0x0f00) >> 8)
+	Vy := byte((opcode & 0x00f0) >> 4)
 
+	sum := word(e.registers[Vx]) + word(e.registers[Vy])
+	if sum > 255 {
+		e.registers[0xf] = 1
+	} else {
+		e.registers[0xf] = 0
+	}
+
+	e.registers[Vx] = byte(sum & 0xff)
 }
 
+// Set Vx = Vx - Vy, set VF = not underflow
 func (e *Emulator) op_8xy5(opcode word) {
+	Vx := byte((opcode & 0x0f00) >> 8)
+	Vy := byte((opcode & 0x00f0) >> 4)
 
+	if e.registers[Vx] > e.registers[Vy] {
+		e.registers[0xf] = 1
+	} else {
+		e.registers[0xf] = 0
+	}
+
+	e.registers[Vx] -= e.registers[Vy]
 }
 
+// Save least significant bit in Vf, then shif vx right 1
 func (e *Emulator) op_8xy6(opcode word) {
-
+	Vx := byte((opcode & 0x0f00) >> 8)
+	e.registers[0xf] = e.registers[Vx] & 0x1
+	e.registers[Vx] >>= 1
 }
 
+// Set Vx = Vy - Vx, Vf = not underflow
 func (e *Emulator) op_8xy7(opcode word) {
-
+	Vx := byte((opcode & 0x0f00) >> 8)
+	Vy := byte((opcode & 0x00f0) >> 4)
+	if e.registers[Vx] < e.registers[Vy] {
+		e.registers[0xf] = 1
+	} else {
+		e.registers[0xf] = 0
+	}
+	e.registers[Vx] = e.registers[Vy] - e.registers[Vx]
 }
 
+// Save most significant bit in Vf, then shif vx left 1
 func (e *Emulator) op_8xyE(opcode word) {
-
+	Vx := byte((opcode & 0x0f00) >> 8)
+	e.registers[0xf] = (e.registers[Vx] & 8) >> 7
+	e.registers[Vx] <<= 1
 }
 
+// Skip next instruction if Vx != Vy
 func (e *Emulator) op_9xy0(opcode word) {
-
+	Vx := byte((opcode & 0x0f00) >> 8)
+	Vy := byte((opcode & 0x00f0) >> 4)
+	if e.registers[Vx] != e.registers[Vy] {
+		e.pc += 2
+	}
 }
 
+// set index = nnn
 func (e *Emulator) op_Annn(opcode word) {
-
+	e.index = opcode & 0xfff
 }
 
+// Jump to V0 + nnn
 func (e *Emulator) op_Bnnn(opcode word) {
-
+	e.pc = word(e.registers[0]) + (opcode & 0xfff)
 }
 
+// set Vx = random & kk
 func (e *Emulator) op_Cxkk(opcode word) {
+	Vx := (opcode & 0x0f00) >> 8
+	kk := byte(opcode & 0x0ff)
 
+	e.registers[Vx] = e.rng() & kk
 }
 
+// draw sprite
 func (e *Emulator) op_Dxyn(opcode word) {
+	Vx := (opcode & 0x0f00) >> 8
+	Vy := (opcode & 0x00f0) >> 4
+	height := byte(opcode & 0xf)
+
+	// Wrap if going beyond screen boundaries
+	xPos := e.registers[Vx] % SCREEN_WIDTH
+	yPos := e.registers[Vy] % SCREEN_HEIGHT
+
+	e.registers[0xF] = 0
+
+	for row := range height {
+		spriteByte := e.memory[e.index+word(row)]
+
+		for col := range byte(8) {
+			spritePixel := spriteByte & (0x80 >> col)
+			screenPixel := &e.screen[(yPos+row)*SCREEN_WIDTH+(xPos+col)]
+
+			// uint32_t* screenPixel = &video[(yPos + row) * VIDEO_WIDTH + (xPos + col)];
+			if spritePixel != 0 {
+				// Screen pixel also on - collision
+				if *screenPixel {
+					e.registers[0xF] = 1
+				}
+
+				*screenPixel = !*screenPixel
+			}
+		}
+	}
 
 }
 
+// Skip instruction if key[Vx] is pressed
 func (e *Emulator) op_Ex9E(opcode word) {
-
+	Vx := (opcode & 0x0f00) >> 8
+	keyNum := e.registers[Vx]
+	if e.keypad[keyNum] {
+		e.pc += 2
+	}
 }
 
+// Skip instruction if key[Vx] is not pressed
 func (e *Emulator) op_ExA1(opcode word) {
-
+	Vx := (opcode & 0x0f00) >> 8
+	keyNum := e.registers[Vx]
+	if !e.keypad[keyNum] {
+		e.pc += 2
+	}
 }
 
+// Set Vx to delay timer value
 func (e *Emulator) op_Fx07(opcode word) {
+	Vx := (opcode & 0x0f00) >> 8
+	e.registers[Vx] = e.delayTimer
 
 }
 
+// Wait for keypress, then store value in vx
 func (e *Emulator) op_Fx0A(opcode word) {
+	Vx := (opcode & 0x0f00) >> 8
 
+	for i, v := range e.keypad {
+		if v {
+			e.registers[Vx] = byte(i)
+			return
+		}
+	}
+	e.pc -= 2
 }
 
+// Set delaytimer to Vx
 func (e *Emulator) op_Fx15(opcode word) {
-
+	Vx := (opcode & 0x0f00) >> 8
+	e.delayTimer = e.registers[Vx]
 }
 
+// Set sound timer to Vx
 func (e *Emulator) op_Fx18(opcode word) {
-
+	Vx := (opcode & 0x0f00) >> 8
+	e.soundTimer = e.registers[Vx]
 }
 
+// Set index += Vx
 func (e *Emulator) op_Fx1E(opcode word) {
-
+	Vx := (opcode & 0x0f00) >> 8
+	e.index += word(e.registers[Vx])
 }
 
+// Set I to sprite for digit in Vx
 func (e *Emulator) op_Fx29(opcode word) {
-
+	Vx := (opcode & 0x0f00) >> 8
+	digit := e.registers[Vx]
+	e.index = FONTSET_START_ADDRESS + (5 * word(digit))
 }
 
+// save Bcd of Vx at I, I+1, I+2
 func (e *Emulator) op_Fx33(opcode word) {
+	Vx := (opcode & 0x0F00) >> 8
+	value := e.registers[Vx]
 
+	e.memory[e.index+2] = value % 10
+	value /= 10
+
+	e.memory[e.index+1] = value % 10
+	value /= 10
+
+	e.memory[e.index] = value % 10
 }
 
+// Store registers V0-Vx in memory from index location forward
 func (e *Emulator) op_Fx55(opcode word) {
-
+	Vx := (opcode & 0x0F00) >> 8
+	for i := word(0); i <= Vx; i++ {
+		e.memory[e.index+i] = e.registers[i]
+	}
 }
 
+// Read registers V0-Vx from memory at index location forward
 func (e *Emulator) op_Fx65(opcode word) {
+	Vx := (opcode & 0x0F00) >> 8
 
+	for i := word(0); i <= Vx; i++ {
+		e.registers[i] = e.memory[e.index+i]
+	}
 }

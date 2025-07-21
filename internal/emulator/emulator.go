@@ -11,6 +11,9 @@ type word = uint16
 const (
 	START_ADDRESS         word = 0x200
 	FONTSET_START_ADDRESS word = 0x50
+
+	SCREEN_WIDTH  = 64
+	SCREEN_HEIGHT = 32
 )
 
 var (
@@ -26,8 +29,8 @@ type Emulator struct {
 	sp         byte
 	delayTimer byte
 	soundTimer byte
-	keypad     [16]byte
-	screen     [64 * 32]bool
+	keypad     [16]bool
+	screen     [SCREEN_WIDTH * SCREEN_HEIGHT]bool
 	rng        func() byte
 }
 
