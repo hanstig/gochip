@@ -11,9 +11,8 @@ type word = uint16
 const (
 	START_ADDRESS         word = 0x200
 	FONTSET_START_ADDRESS word = 0x50
-
-	SCREEN_WIDTH  = 64
-	SCREEN_HEIGHT = 32
+	SCREEN_WIDTH          int  = 64
+	SCREEN_HEIGHT         int  = 32
 )
 
 var (
@@ -29,20 +28,23 @@ type Emulator struct {
 	sp         byte
 	delayTimer byte
 	soundTimer byte
-	keypad     [16]bool
-	screen     [SCREEN_WIDTH * SCREEN_HEIGHT]bool
+	Keypad     [16]bool
+	Screen     [SCREEN_HEIGHT * SCREEN_WIDTH]bool
 	rng        func() byte
+}
+
+func NewSeededEmulator(seed uint64) Emulator {
+	e := NewEmulator()
+	e.rng = NewSeededRng(seed)
+	return e
 }
 
 func NewEmulator() Emulator {
 	e := Emulator{
 		pc:  START_ADDRESS,
-		rng: NewSeededRng(1234),
-		// rng: NewRng(),
+		rng: NewRng(),
 	}
-
-	copy(e.memory[50:], fontset[:])
-
+	copy(e.memory[FONTSET_START_ADDRESS:], fontset[:])
 	return e
 }
 
@@ -86,7 +88,7 @@ func (e *Emulator) Cycle() error {
 		e.delayTimer--
 	}
 
-	if e.soundTimer > 9 {
+	if e.soundTimer > 0 {
 		e.soundTimer--
 	}
 
