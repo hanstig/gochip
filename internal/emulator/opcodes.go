@@ -103,13 +103,16 @@ func (e *Emulator) decode(opcode word) (func(word), error) {
 
 // Clear the display
 func (e *Emulator) op_00E0(opcode word) {
-	for i := range len(e.screen) {
-		e.screen[i] = false
+	for i := range len(e.Screen) {
+		e.Screen[i] = false
 	}
 }
 
 // Return from a subroutine
 func (e *Emulator) op_00EE(opcode word) {
+	if e.sp == 0 {
+		return
+	}
 	e.sp--
 	e.pc = e.stack[e.sp]
 }
@@ -251,7 +254,8 @@ func (e *Emulator) op_8xy7(opcode word) {
 // Save most significant bit in Vf, then shif vx left 1
 func (e *Emulator) op_8xyE(opcode word) {
 	Vx := byte((opcode & 0x0f00) >> 8)
-	e.registers[0xf] = (e.registers[Vx] & 8) >> 7
+
+	e.registers[0xf] = (e.registers[Vx] & 0x80) >> 7
 	e.registers[Vx] <<= 1
 }
 
@@ -266,60 +270,51 @@ func (e *Emulator) op_9xy0(opcode word) {
 
 // set index = nnn
 func (e *Emulator) op_Annn(opcode word) {
-	e.index = opcode & 0xfff
+	e.index = opcode & 0x0fff
 }
 
 // Jump to V0 + nnn
 func (e *Emulator) op_Bnnn(opcode word) {
-	e.pc = word(e.registers[0]) + (opcode & 0xfff)
+	e.pc = word(e.registers[0]) + (opcode & 0x0fff)
 }
 
 // set Vx = random & kk
 func (e *Emulator) op_Cxkk(opcode word) {
 	Vx := (opcode & 0x0f00) >> 8
-	kk := byte(opcode & 0x0ff)
+	kk := byte(opcode & 0x00ff)
 
 	e.registers[Vx] = e.rng() & kk
 }
 
 // draw sprite
 func (e *Emulator) op_Dxyn(opcode word) {
-	Vx := (opcode & 0x0f00) >> 8
-	Vy := (opcode & 0x00f0) >> 4
-	height := byte(opcode & 0xf)
-
-	// Wrap if going beyond screen boundaries
-	xPos := e.registers[Vx] % SCREEN_WIDTH
-	yPos := e.registers[Vy] % SCREEN_HEIGHT
+	x := int(e.registers[(opcode&0x0F00)>>8])
+	y := int(e.registers[(opcode&0x00F0)>>4])
+	h := opcode & 0x000F
 
 	e.registers[0xF] = 0
+	for row := range h {
+		spriteRow := e.memory[e.index+row]
+		for col := range 8 {
+			spritePixel := (spriteRow & (0x80 >> col)) != 0
+			screenPixel := &e.Screen[(y+int(row))*SCREEN_WIDTH+x+int(col)]
 
-	for row := range height {
-		spriteByte := e.memory[e.index+word(row)]
-
-		for col := range byte(8) {
-			spritePixel := spriteByte & (0x80 >> col)
-			screenPixel := &e.screen[(yPos+row)*SCREEN_WIDTH+(xPos+col)]
-
-			// uint32_t* screenPixel = &video[(yPos + row) * VIDEO_WIDTH + (xPos + col)];
-			if spritePixel != 0 {
-				// Screen pixel also on - collision
+			if spritePixel {
 				if *screenPixel {
-					e.registers[0xF] = 1
+					e.registers[0xf] = 1
 				}
-
 				*screenPixel = !*screenPixel
 			}
+
 		}
 	}
-
 }
 
 // Skip instruction if key[Vx] is pressed
 func (e *Emulator) op_Ex9E(opcode word) {
 	Vx := (opcode & 0x0f00) >> 8
 	keyNum := e.registers[Vx]
-	if e.keypad[keyNum] {
+	if e.Keypad[keyNum] {
 		e.pc += 2
 	}
 }
@@ -328,7 +323,7 @@ func (e *Emulator) op_Ex9E(opcode word) {
 func (e *Emulator) op_ExA1(opcode word) {
 	Vx := (opcode & 0x0f00) >> 8
 	keyNum := e.registers[Vx]
-	if !e.keypad[keyNum] {
+	if !e.Keypad[keyNum] {
 		e.pc += 2
 	}
 }
@@ -344,7 +339,7 @@ func (e *Emulator) op_Fx07(opcode word) {
 func (e *Emulator) op_Fx0A(opcode word) {
 	Vx := (opcode & 0x0f00) >> 8
 
-	for i, v := range e.keypad {
+	for i, v := range e.Keypad {
 		if v {
 			e.registers[Vx] = byte(i)
 			return
