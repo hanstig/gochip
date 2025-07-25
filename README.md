@@ -4,6 +4,8 @@ A chip-8 interpreter written in Go.
 
 This is just a hobby project for me to get more familiar with the go programming language and with hardware emulation.
 
+![Game Over! :(](./assets/game_over.png)
+
 ## Dependencies
 Requires Go 1.22 or later
 
@@ -11,19 +13,28 @@ The Frontend for the emulator uses the Ebitengine game engine.
 Ebitengine requires a C compiler like gcc or clang when installing on MacOS or Linux.
 
 ## Building
-Build the executable by navigating to the root directory .../gochip/
+Build the executable by navigating to the src directory .../gochip/src/
 and run the command:
 
 > $ go build
 
 ## Running the emulator
 After building, start the executable by running:
-> ./gochip \<delay\> \<rom path\>
+>$ ./gochip \<delay\> \<rom path\>
 
 \<delay\> determines how fast the emulator runs and can be adjusted to make a program run at an appropriate speed. A higher value means the emulator runs slower.
 
 Example:
-> $ ./gochip 5 roms/maze.ch8
+> $ ./gochip 100 roms/maze.ch8
+
+## Keypad
+The emulator uses the following keys as input:
+
+| 1 | 2 | 3 | 4 |
+|---|---|---|---|
+| Q | W | E | R |
+| A | S | D | F |
+| Z | X | C | V |
 
 ## Resources used:
 I used [Austin Morlan's](https://austinmorlan.com/posts/chip8_emulator/)
