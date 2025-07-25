@@ -98,7 +98,7 @@ func Start(screen []bool, width, height, blocksize int, keypad []bool) {
 
 	g := &game{width: width, height: height, screenBuf: screen, keypad: keypad}
 
-	ebiten.SetWindowTitle("Hello, World!")
+	ebiten.SetWindowTitle("Chip-8")
 	if err := ebiten.RunGame(g); err != nil {
 		log.Fatal(err)
 	}
