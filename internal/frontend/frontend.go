@@ -8,24 +8,47 @@ import (
 	"github.com/hajimehoshi/ebiten/v2/vector"
 )
 
+// 1 2 3 C
+// 4 5 6 D
+// 7 8 9 E
+// A 0 B F
 var keymap = [...]ebiten.Key{
-	ebiten.KeyDigit1,
-	ebiten.KeyDigit2,
-	ebiten.KeyDigit3,
-	ebiten.KeyDigit4,
-	ebiten.KeyQ,
-	ebiten.KeyW,
-	ebiten.KeyE,
-	ebiten.KeyR,
-	ebiten.KeyA,
-	ebiten.KeyS,
-	ebiten.KeyD,
-	ebiten.KeyF,
-	ebiten.KeyZ,
-	ebiten.KeyX,
-	ebiten.KeyC,
-	ebiten.KeyV,
+	ebiten.KeyX,      // 0
+	ebiten.KeyDigit1, // 1
+	ebiten.KeyDigit2, // 2
+	ebiten.KeyDigit3, // 3
+	ebiten.KeyQ,      // 4
+	ebiten.KeyW,      // 5
+	ebiten.KeyE,      // 6
+	ebiten.KeyA,      // 7
+	ebiten.KeyS,      // 8
+	ebiten.KeyD,      // 9
+	ebiten.KeyZ,      // A
+	ebiten.KeyC,      // B
+	ebiten.KeyDigit4, // C
+	ebiten.KeyR,      // D
+	ebiten.KeyF,      // E
+	ebiten.KeyV,      // F
 }
+
+// var keymap = [...]ebiten.Key{
+// 	ebiten.KeyDigit1,
+// 	ebiten.KeyDigit2,
+// 	ebiten.KeyDigit3,
+// 	ebiten.KeyDigit4,
+// 	ebiten.KeyQ,
+// 	ebiten.KeyW,
+// 	ebiten.KeyE,
+// 	ebiten.KeyR,
+// 	ebiten.KeyA,
+// 	ebiten.KeyS,
+// 	ebiten.KeyD,
+// 	ebiten.KeyF,
+// 	ebiten.KeyZ,
+// 	ebiten.KeyX,
+// 	ebiten.KeyC,
+// 	ebiten.KeyV,
+// }
 
 var (
 	FOREGROUND = color.RGBA{0xf8, 0xff, 0xc0, 255} // #f8ffc0
