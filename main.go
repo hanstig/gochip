@@ -1,12 +1,12 @@
 package main
 
 import (
+	"fmt"
 	"gochip/internal/emulator"
 	"gochip/internal/frontend"
 	"log"
 	"os"
 	"strconv"
-
 	"time"
 )
 
@@ -33,7 +33,8 @@ func StartEmulator(em *emulator.Emulator, delay time.Duration) {
 func main() {
 	args := os.Args
 	if len(args) != 3 {
-		log.Fatalf("Usage: %s <delay> <rom>\n", args[0])
+		fmt.Println("Usage: %s <delay> <rom>\n", args[0])
+		os.Exit(1)
 	}
 
 	delay, err := strconv.Atoi(args[1])
