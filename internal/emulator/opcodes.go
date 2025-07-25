@@ -293,9 +293,9 @@ func (e *Emulator) op_Dxyn(opcode word) {
 	h := opcode & 0x000F
 
 	e.registers[0xF] = 0
-	for row := range h {
+	for row := word(0) ; row < h && y + int(row) < SCREEN_HEIGHT; row++{
 		spriteRow := e.memory[e.index+row]
-		for col := range 8 {
+		for col := 0 ; col < 8 && x + col < SCREEN_WIDTH; col++ {
 			spritePixel := (spriteRow & (0x80 >> col)) != 0
 			screenPixel := &e.Screen[(y+int(row))*SCREEN_WIDTH+x+int(col)]
 
